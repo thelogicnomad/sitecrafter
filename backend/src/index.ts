@@ -28,9 +28,9 @@ app.post("/template",async(req,res)=>{
     
     if (response=='node'){
       res.json({
-        prompts: [BASE_PROMPT, `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${reactprompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`],
+        prompts: [BASE_PROMPT, `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${nodeprompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`],
         
-        uiPrompts: [reactprompt]
+        uiPrompts: [nodeprompt]
     })
      return;
     }
@@ -90,34 +90,7 @@ app.post("/chat", async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-app.listen("3000")
+app.listen(3000, () => {
+console.log("your port is running on 3000")
+})
 
