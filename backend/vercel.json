@@ -1,0 +1,6 @@
+{
+  "redirects": [
+    { "source": "/template", "destination": "/src/index.ts", "permanent": true },
+    {"source": "/chat", "destination": "/src/index.ts", "permanent": true }
+  ]
+}
