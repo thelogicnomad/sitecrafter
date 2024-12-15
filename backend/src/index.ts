@@ -19,7 +19,10 @@ const model = genAI.getGenerativeModel({
     systemInstruction: getSystemPrompt(),
   });
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://website-builder-ew2m.vercel.app/',
+    methods: ['GET', 'POST']
+}));
 
 app.post("/template",async(req,res)=>{
     const prompt=req.body.prompt + "    Return either node or react based on what do you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra";
