@@ -1,25 +1,37 @@
-require("dotenv").config();
+import dotenv from "dotenv";
 import express from "express";
+import cors from "cors";
 import { getSystemPrompt ,BASE_PROMPT } from './prompts';
 import {reactprompt} from "./deafult/react";
 import {nodeprompt} from "./deafult/node"
-import cors from "cors";
-
 import { HfInference } from "@huggingface/inference";
+dotenv.config();
+
+const app=express();
+
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  next();
+});
+
+app.use(express.json());
 
 const client = new HfInference(process.env.hugging);
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const app=express();
-app.use(express.json());
+
 const systemPrompt = getSystemPrompt();
 const genAI = new GoogleGenerativeAI(process.env.gemini);
 const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     systemInstruction: getSystemPrompt(),
   });
-
-app.use(cors());
 
 app.post("/template",async(req,res)=>{
     const prompt=req.body.prompt + "    Return either node or react based on what do you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra";
