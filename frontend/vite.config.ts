@@ -7,6 +7,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    outDir: 'build'
+  },
   server: {
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
