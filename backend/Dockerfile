@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 5000
 
 # start the background server
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
