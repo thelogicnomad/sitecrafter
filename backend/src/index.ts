@@ -6,6 +6,24 @@ import {reactprompt} from "./deafult/react";
 import {nodeprompt} from "./deafult/node"
 import { HfInference } from "@huggingface/inference";
 dotenv.config();
+import OpenAI from "openai";
+const token = process.env.openai_api;
+
+
+
+const client = new OpenAI({
+  baseURL: "https://models.inference.ai.azure.com",
+  apiKey: token
+});
+
+
+
+
+
+
+
+
+
 
 const app=express();
 
@@ -24,7 +42,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-const client = new HfInference(process.env.hugging);
+//const client = new HfInference(process.env.hugging);
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
@@ -70,32 +88,25 @@ app.post("/chat", async (req, res) => {
     }
     
     const messages = req.body.messages;
-
+//console.log(getSystemPrompt())
      // Map the messages to include roles and contents
-    const chatMessages = [
-      {
-        role: "system",
-        content: getSystemPrompt() ,
-      },
-      ...messages.map((msg:Message) => ({
+     const chatMessages = [
+      { role: "system", content: getSystemPrompt() },
+      ...messages.map((msg: Message) => ({
         role: msg.role,
-        content: msg.content ,
+        content: msg.content,
       })),
     ];
-
-    // Perform chat completion with the new model and messages
-    const chatCompletion = await client.chatCompletion({
-      model: "Qwen/Qwen2.5-Coder-32B-Instruct",
+    const response = await client.chat.completions.create({
+      model: "gpt-4o", // Use the latest OpenAI model
       messages: chatMessages,
-      max_tokens: 10000,
     });
 
-    // Get the response content
-    const responseContent = chatCompletion.choices[0].message.content;
+    // Extract the response text
+    const responseContent = response.choices[0].message.content;
+    console.log(responseContent);
 
-    res.json({
-      response: responseContent,
-    });
+    res.json({ response: responseContent });
   } catch (error) {
     console.error("Error processing chat request:", error);
     res.status(500).json({ error: "Internal Server Error" });
