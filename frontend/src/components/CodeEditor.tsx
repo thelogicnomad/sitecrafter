@@ -1,6 +1,6 @@
 import React from 'react';
 import Editor from '@monaco-editor/react';
-import { FileItem } from '../types';
+import { FileItem } from '../hooks/types';
 
 interface CodeEditorProps {
   file: FileItem | null;

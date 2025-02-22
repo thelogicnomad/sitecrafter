@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
-import { Step } from '../types';
+import { Step } from '../hooks/types';
 
 interface StepsListProps {
   steps: Step[];

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { StepsList } from '../components/StepsList';
@@ -5,7 +6,7 @@ import { FileExplorer } from '../components/FileExplorer';
 import { TabView } from '../components/TabView';
 import { CodeEditor } from '../components/CodeEditor';
 import { PreviewFrame } from '../components/PreviewFrame';
-import { Step, FileItem, StepType } from '../types';
+import { Step, FileItem, StepType } from '../hooks/types';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import { parseXml } from '../steps';
@@ -100,7 +101,7 @@ export function Builder() {
         
       }))
     }
-    console.log(files);
+    //console.log(files);
   }, [steps, files]);
 
   useEffect(() => {
@@ -164,7 +165,9 @@ export function Builder() {
     })));
 
     setLoading(true);
-    const stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
+
+    try{
+    const    stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
       messages: [...prompts, prompt].map(content => ({
         role: "user",
         content
@@ -184,8 +187,11 @@ export function Builder() {
     })));
 
     setLlmMessages(x => [...x, {role: "assistant", content: stepsResponse.data.response}])
+  }catch(error){
+    console.log("sorry we cannot generate the required website")
+    // window.location.href = `http://localhost:5173/`;
   }
-
+  }
   useEffect(() => {
     init();
   }, [])
