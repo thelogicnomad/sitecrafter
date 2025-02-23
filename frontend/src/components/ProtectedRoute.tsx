@@ -6,10 +6,12 @@ const ProtectedRoute = () => {
 
   console.log(" Checking token in ProtectedRoute:", token); 
 
-  if (!token) {
+  const tokenFromStorage = localStorage.getItem("token");
+  if (!token && !tokenFromStorage) {
     console.warn(" Unauthorized access. Redirecting to login...");
     return <Navigate to="/login" replace />;
   }
+  
 
   return <Outlet />;
 };

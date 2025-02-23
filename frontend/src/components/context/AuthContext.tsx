@@ -23,48 +23,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
 
+    console.log("Stored token:", storedToken); // Add this for debugging
+    console.log("Stored user:", storedUser); // Add this for debugging
 
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
+    if (storedToken && storedUser) {
       setToken(storedToken);
-      //console.log(" Loaded user:", JSON.parse(storedUser));
-    } else {
-      //console.warn(" No user or token found in localStorage.");
+      setUser(JSON.parse(storedUser));
     }
 
     setLoading(false);
   }, []);
 
-  const login = (userData: User, authToken: string) => {
-   // console.log("🔹 Logging in:", userData);
-
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", authToken);
-
-    setUser(userData);
-    setToken(authToken);
-
-    navigate("/dashboard", { replace: true });
+  const login = async (userData: User, authToken: string) => {
+    return new Promise((resolve) => {
+      console.log("Login called with:", { userData, authToken });
+  
+      localStorage.setItem("token", authToken);
+      localStorage.setItem("user", JSON.stringify(userData));
+  
+      setUser(userData);
+      setToken(authToken);
+  
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+        resolve(true);
+      }, 100);
+    });
   };
+  
 
   const logout = () => {
-    //console.log("🔹 Logging out...");
-
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
-
+    localStorage.removeItem("user");
     setUser(null);
     setToken(null);
-
-    //console.log(" Logged out. Redirecting to login...");
     navigate("/login", { replace: true });
-
-    setTimeout(() => {
-      window.location.reload(); 
-    }, 100);
   };
 
   return (

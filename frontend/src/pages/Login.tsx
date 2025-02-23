@@ -19,60 +19,43 @@ const Login = () => {
     password: '',
   });
 
-  // Improved cold start handling with retry mechanism
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setShowColdStartMessage(true);
 
-    const makeLoginRequest = async (retryCount = 0): Promise<any> => {
-      try {
-        const response = await axios.post<{ token: string; user: { id: string; email: string; username: string } }>(
-          `${BACKEND_URL}/auth/login`,
-          formData,
-          { 
-            headers: { 'Content-Type': 'application/json' },
-            timeout: retryCount === 0 ? 50000 : 30000 // Longer timeout for first attempt
-          }
-        );
-        return response;
-      } catch (error: any) {
-        if (retryCount < 2 && error.code === 'ECONNABORTED') {
-          // If timeout, retry up to 2 times
-          return makeLoginRequest(retryCount + 1);
-        }
-        throw error;
-      }
-    };
-
     try {
-      const response = await makeLoginRequest();
+      const response = await axios.post(
+        `${BACKEND_URL}/auth/login`,
+        formData,
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       if (response.status === 200) {
         const { token, user } = response.data;
-
-        if (!user || !token) {
-          console.error("Login response missing user or token!");
-          toast.error("Login failed. Missing username.");
-          return;
-        }
-
-        login(user, token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        await login(user, token); // Ensure login is awaited
         toast.success('Login successful!', { autoClose: 2000 });
-        setTimeout(() => navigate('/dashboard'), 2500);
+        
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 500);
       }
     } catch (error: any) {
-      console.error("Login error:", error.response?.data);
       toast.error(
-        error.code === 'ECONNABORTED'
-          ? 'Server is taking too long to respond. Please try again.'
-          : error.response?.data?.message || 'Login failed. Please try again.'
+        error.response?.data?.message || 'Login failed. Please try again.'
       );
     } finally {
       setLoading(false);
       setShowColdStartMessage(false);
     }
   }, [formData, login, navigate]);
+
 
   const handleGoogleLogin = () => {
     window.location.href = `${BACKEND_URL}/auth/google`;
@@ -179,7 +162,7 @@ const Login = () => {
               Join us and start creating amazing websites with AI-powered tools
             </p>
             <Link
-              to="https://sitecrafter.vercel.app/signup"
+              to="/signup"
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-white text-white rounded-lg hover:bg-white hover:text-gray-900 transition-colors duration-200"
             >
               Create account

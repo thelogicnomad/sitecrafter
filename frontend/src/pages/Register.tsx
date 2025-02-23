@@ -7,9 +7,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import { BACKEND_URL } from '../config';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { GoogleLogo } from '../components/googllogo';
+import { useAuth } from '../components/context/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showColdStartMessage, setShowColdStartMessage] = useState(false);
   const [formData, setFormData] = useState({
@@ -18,51 +20,42 @@ const Register = () => {
     username: '',
   });
 
-  // Improved registration handler with retry mechanism
   const handleRegister = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setShowColdStartMessage(true);
 
-    const makeRegisterRequest = async (retryCount = 0): Promise<any> => {
-      try {
-        const response = await axios.post(
-          `${BACKEND_URL}/auth/signup`,
-          formData,
-          {
-            headers: { 'Content-Type': 'application/json' },
-            timeout: retryCount === 0 ? 50000 : 30000 // Longer timeout for first attempt
-          }
-        );
-        return response;
-      } catch (error: any) {
-        if (retryCount < 2 && error.code === 'ECONNABORTED') {
-          // If timeout, retry up to 2 times
-          return makeRegisterRequest(retryCount + 1);
-        }
-        throw error;
-      }
-    };
-
     try {
-      const response = await makeRegisterRequest();
+      const response = await axios.post(
+        `${BACKEND_URL}/auth/signup`,
+        formData,
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       if (response.status === 201) {
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        await login(user, token); // Ensure this is awaited
         toast.success('Registered Successfully!', { autoClose: 2000 });
-        setTimeout(() => navigate('/dashboard'), 2500);
+        
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 500);
       }
     } catch (error: any) {
-      console.error("Registration error:", error);
       toast.error(
-        error.code === 'ECONNABORTED'
-          ? 'Server is taking too long to respond. Please try again.'
-          : error.response?.data?.message || 'Registration failed. Please try again.'
+        error.response?.data?.message || 'Registration failed. Please try again.'
       );
     } finally {
       setLoading(false);
       setShowColdStartMessage(false);
     }
-  }, [formData, navigate]);
+  }, [formData, login, navigate]);
 
   const handleGoogleLogin = () => {
     window.location.href = `${BACKEND_URL}/auth/google`;
