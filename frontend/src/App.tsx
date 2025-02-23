@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./components/context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -7,10 +8,29 @@ import Signup from "./pages/Register";
 import Home from "./pages/Home";
 import { Builder } from "./pages/Builder";
 
+// Page Tracker Component for Google Analytics
+const PageTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname,
+        page_location: window.location.href,
+        page_title: document.title
+      });
+    }
+  }, [location]);
+
+  return null;
+};
+
 const App = () => {
   return (
     <Router>
       <AuthProvider>
+        {/* Add PageTracker inside Router but outside Routes */}
+        <PageTracker />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
