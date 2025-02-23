@@ -151,7 +151,7 @@ const Login = () => {
             <div className="text-center md:hidden">
               <p className="text-gray-600">Don't have an account?</p>
               <Link
-                to="/Register"
+                to="https://sitecrafter.vercel.app/signup"
                 className="mt-2 inline-block text-yellow-500 hover:text-yellow-600 font-semibold"
               >
                 Create an account
