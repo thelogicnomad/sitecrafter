@@ -4,7 +4,9 @@ import Navbar from '../components/Navbar';
 import About from '../components/About';
 import Contact from '../components/Contact';
 import { ArrowRight } from 'lucide-react';
-
+import dashboard_image from '../assests/dashboard_image.png'
+import main_page from '../assests/main.png'
+import screen from '../assests/cake.png'
 const Home = () => {
   const navigate = useNavigate();
 
@@ -34,9 +36,9 @@ const Home = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
             {[
-              "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1115&q=80",
-              "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-              "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
+              dashboard_image,
+              main_page,
+              screen
             ].map((url, index) => (
               <div 
                 key={index}

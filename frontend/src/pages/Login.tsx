@@ -6,18 +6,36 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from '../components/context/AuthContext'; 
 import { BACKEND_URL } from '../config';
+import LoadingOverlay from '../components/LoadingOverlay';
+
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth(); 
   const [loading, setLoading] = useState(false);
+  const [showColdStartMessage, setShowColdStartMessage] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
+  // Add timeout to show cold start message
+  const coldStartTimeout = () => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setShowColdStartMessage(true);
+      }
+    }, 5000); // Show message after 5 seconds of loading
+
+    return () => clearTimeout(timeoutId);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setShowColdStartMessage(false);
+
+    // Set up the cold start message timeout
+    const timeoutCleanup = coldStartTimeout();
 
     try {
       const response = await axios.post<{ token: string; user: { id: string; email: string; username: string } }>(
@@ -29,31 +47,32 @@ const Login = () => {
       if (response.status === 200) {
         const { token, user } = response.data;
 
-
-
         if (!user || !token) {
-          console.error(" Login response missing user or token!");
+          console.error("Login response missing user or token!");
           toast.error("Login failed. Missing username.");
           return;
         }
 
         login(user, token);
-
         toast.success('Login successful!', { autoClose: 2000 });
       }
     } catch (error: any) {
-      console.error(" Login error:", error.response?.data);
+      console.error("Login error:", error.response?.data);
       toast.error(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
+      setShowColdStartMessage(false);
+      timeoutCleanup();
     }
   };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex justify-center items-center p-4 sm:p-6">
       <ToastContainer position="top-right" />
+      {showColdStartMessage && (
+        <LoadingOverlay message="Logging you in..." />
+      )}
       <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
-        
         <div className="w-full md:w-1/2 p-6 sm:p-8">
           <div className="space-y-6">
             <div>

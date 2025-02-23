@@ -1,28 +1,45 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BACKEND_URL } from '../config';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showColdStartMessage, setShowColdStartMessage] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     username: '',
   });
 
+  // Add timeout to show cold start message
+  const coldStartTimeout = () => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setShowColdStartMessage(true);
+      }
+    }, 5000); // Show message after 5 seconds of loading
+
+    return () => clearTimeout(timeoutId);
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault(); 
     setLoading(true);
+    setShowColdStartMessage(false);
     
+    // Set up the cold start message timeout
+    const timeoutCleanup = coldStartTimeout();
+
     try {
       const response = await axios.post(
         `${BACKEND_URL}/auth/signup`, 
-        formData,  // 🔹 Send password as is (backend will hash)
+        formData,
         { headers: { 'Content-Type': 'application/json' } }
       );
 
@@ -34,6 +51,8 @@ const Register = () => {
       toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
+      setShowColdStartMessage(false);
+      timeoutCleanup();
     }
   };
 
@@ -44,6 +63,9 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex justify-center items-center p-4 sm:p-6">
       <ToastContainer position="top-right" />
+      {showColdStartMessage && (
+        <LoadingOverlay message="Creating your account..." />
+      )}
       <div className="flex flex-col-reverse md:flex-row w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="hidden md:block w-1/2 bg-gradient-to-br from-gray-900 to-gray-800 p-12">
           <div className="h-full flex flex-col justify-center">
@@ -140,12 +162,22 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center space-x-2 bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200"
+                className="w-full flex items-center justify-center space-x-2 bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 disabled:bg-gray-500"
               >
-                <UserPlus className="w-5 h-5" />
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
                 <span>{loading ? 'Creating account...' : 'Create account'}</span>
               </button>
             </form>
+
+            <div className="text-center md:hidden">
+              <p className="text-gray-600">Already have an account?</p>
+              <Link
+                to="/login"
+                className="mt-2 inline-block text-yellow-500 hover:text-yellow-600 font-semibold"
+              >
+                Sign in
+              </Link>
+            </div>
           </div>
         </div>
       </div>
