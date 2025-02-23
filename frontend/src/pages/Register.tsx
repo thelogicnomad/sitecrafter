@@ -4,6 +4,7 @@ import { Mail, Lock, User, UserPlus } from 'lucide-react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { BACKEND_URL } from '../config';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Register = () => {
     
     try {
       const response = await axios.post(
-        `http://localhost:3000/auth/signup`, 
+        `${BACKEND_URL}/auth/signup`, 
         formData,  // 🔹 Send password as is (backend will hash)
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -37,7 +38,7 @@ const Register = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `http://localhost:3000/auth/google`;
+    window.location.href = `${BACKEND_URL}/auth/google`;
   };
 
   return (

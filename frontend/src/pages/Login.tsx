@@ -5,7 +5,7 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from '../components/context/AuthContext'; 
-
+import { BACKEND_URL } from '../config';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth(); 
@@ -21,7 +21,7 @@ const Login = () => {
 
     try {
       const response = await axios.post<{ token: string; user: { id: string; email: string; username: string } }>(
-        `http://localhost:3000/auth/login`,
+        `${BACKEND_URL}/auth/login`,
         formData,
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -64,7 +64,7 @@ const Login = () => {
             <div className="flex flex-col space-y-4">
               <div className="flex justify-center">
                 <a
-                  href="http://localhost:3000/auth/google"
+                  href={`${BACKEND_URL}/auth/google`}
                   className="flex items-center justify-center w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                 >
                   <img src="https://authjs.dev/img/providers/google.svg" alt="Google" className="w-5 h-5" />
