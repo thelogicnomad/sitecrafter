@@ -1,5 +1,6 @@
 import express from 'express';
 import passport from 'passport';
+import { frontend_config } from '../config';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/login', session: true }),
   (req, res) => {
-    res.redirect('http://localhost:5173/dashboard'); // Redirect user after login
+    res.redirect(`${frontend_config}/dashboard`); // Redirect user after login
   }
 );
 
