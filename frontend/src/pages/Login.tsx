@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useAuth } from '../components/context/AuthContext'; 
+import { useAuth } from '../components/context/AuthContext';
 import { BACKEND_URL } from '../config';
 import LoadingOverlay from '../components/LoadingOverlay';
+import { GoogleLogo } from '../components/googllogo';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); 
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showColdStartMessage, setShowColdStartMessage] = useState(false);
   const [formData, setFormData] = useState({
@@ -18,31 +19,34 @@ const Login = () => {
     password: '',
   });
 
-  // Add timeout to show cold start message
-  const coldStartTimeout = () => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setShowColdStartMessage(true);
-      }
-    }, 5000); // Show message after 5 seconds of loading
-
-    return () => clearTimeout(timeoutId);
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  // Improved cold start handling with retry mechanism
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setShowColdStartMessage(false);
+    setShowColdStartMessage(true);
 
-    // Set up the cold start message timeout
-    const timeoutCleanup = coldStartTimeout();
+    const makeLoginRequest = async (retryCount = 0): Promise<any> => {
+      try {
+        const response = await axios.post<{ token: string; user: { id: string; email: string; username: string } }>(
+          `${BACKEND_URL}/auth/login`,
+          formData,
+          { 
+            headers: { 'Content-Type': 'application/json' },
+            timeout: retryCount === 0 ? 50000 : 30000 // Longer timeout for first attempt
+          }
+        );
+        return response;
+      } catch (error: any) {
+        if (retryCount < 2 && error.code === 'ECONNABORTED') {
+          // If timeout, retry up to 2 times
+          return makeLoginRequest(retryCount + 1);
+        }
+        throw error;
+      }
+    };
 
     try {
-      const response = await axios.post<{ token: string; user: { id: string; email: string; username: string } }>(
-        `${BACKEND_URL}/auth/login`,
-        formData,
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      const response = await makeLoginRequest();
 
       if (response.status === 200) {
         const { token, user } = response.data;
@@ -55,15 +59,23 @@ const Login = () => {
 
         login(user, token);
         toast.success('Login successful!', { autoClose: 2000 });
+        setTimeout(() => navigate('/dashboard'), 2500);
       }
     } catch (error: any) {
       console.error("Login error:", error.response?.data);
-      toast.error(error.response?.data?.message || 'Login failed. Please try again.');
+      toast.error(
+        error.code === 'ECONNABORTED'
+          ? 'Server is taking too long to respond. Please try again.'
+          : error.response?.data?.message || 'Login failed. Please try again.'
+      );
     } finally {
       setLoading(false);
       setShowColdStartMessage(false);
-      timeoutCleanup();
     }
+  }, [formData, login, navigate]);
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${BACKEND_URL}/auth/google`;
   };
   
   return (
@@ -82,13 +94,13 @@ const Login = () => {
 
             <div className="flex flex-col space-y-4">
               <div className="flex justify-center">
-                <a
-                  href={`${BACKEND_URL}/auth/google`}
+                <button 
+                  onClick={handleGoogleLogin} 
                   className="flex items-center justify-center w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                 >
-                  <img src="https://authjs.dev/img/providers/google.svg" alt="Google" className="w-5 h-5" />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Google</span>
-                </a>
+                  <GoogleLogo />
+                  <span className="ml-2 text-sm font-medium text-gray-700">Sign in with Google</span>
+                </button>
               </div>
 
               <div className="relative">
@@ -151,7 +163,7 @@ const Login = () => {
             <div className="text-center md:hidden">
               <p className="text-gray-600">Don't have an account?</p>
               <Link
-                to="https://sitecrafter.vercel.app/signup"
+                to="/signup"
                 className="mt-2 inline-block text-yellow-500 hover:text-yellow-600 font-semibold"
               >
                 Create an account
@@ -167,7 +179,7 @@ const Login = () => {
               Join us and start creating amazing websites with AI-powered tools
             </p>
             <Link
-              to="/signup"
+              to="https://sitecrafter.vercel.app/signup"
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-white text-white rounded-lg hover:bg-white hover:text-gray-900 transition-colors duration-200"
             >
               Create account

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, UserPlus, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BACKEND_URL } from '../config';
 import LoadingOverlay from '../components/LoadingOverlay';
+import { GoogleLogo } from '../components/googllogo';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,44 +18,51 @@ const Register = () => {
     username: '',
   });
 
-  // Add timeout to show cold start message
-  const coldStartTimeout = () => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setShowColdStartMessage(true);
-      }
-    }, 5000); // Show message after 5 seconds of loading
-
-    return () => clearTimeout(timeoutId);
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault(); 
+  // Improved registration handler with retry mechanism
+  const handleRegister = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    setShowColdStartMessage(false);
-    
-    // Set up the cold start message timeout
-    const timeoutCleanup = coldStartTimeout();
+    setShowColdStartMessage(true);
+
+    const makeRegisterRequest = async (retryCount = 0): Promise<any> => {
+      try {
+        const response = await axios.post(
+          `${BACKEND_URL}/auth/signup`,
+          formData,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: retryCount === 0 ? 50000 : 30000 // Longer timeout for first attempt
+          }
+        );
+        return response;
+      } catch (error: any) {
+        if (retryCount < 2 && error.code === 'ECONNABORTED') {
+          // If timeout, retry up to 2 times
+          return makeRegisterRequest(retryCount + 1);
+        }
+        throw error;
+      }
+    };
 
     try {
-      const response = await axios.post(
-        `${BACKEND_URL}/auth/signup`, 
-        formData,
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      const response = await makeRegisterRequest();
 
       if (response.status === 201) {
         toast.success('Registered Successfully!', { autoClose: 2000 });
         setTimeout(() => navigate('/dashboard'), 2500);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
+      console.error("Registration error:", error);
+      toast.error(
+        error.code === 'ECONNABORTED'
+          ? 'Server is taking too long to respond. Please try again.'
+          : error.response?.data?.message || 'Registration failed. Please try again.'
+      );
     } finally {
       setLoading(false);
       setShowColdStartMessage(false);
-      timeoutCleanup();
     }
-  };
+  }, [formData, navigate]);
 
   const handleGoogleLogin = () => {
     window.location.href = `${BACKEND_URL}/auth/google`;
@@ -90,8 +98,8 @@ const Register = () => {
                   onClick={handleGoogleLogin} 
                   className="flex items-center justify-center w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                 >
-                  <img src="https://authjs.dev/img/providers/google.svg" alt="Google" className="w-5 h-5" />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Google</span>
+                  <GoogleLogo />
+                  <span className="ml-2 text-sm font-medium text-gray-700">Sign up with Google</span>
                 </button>
               </div>
 
