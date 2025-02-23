@@ -49,7 +49,7 @@ const Register = () => {
 
       if (response.status === 201) {
         toast.success('Registered Successfully!', { autoClose: 2000 });
-        setTimeout(() => navigate('/dashboard'), 2500);
+        setTimeout(() => navigate('https://sitecrafter.vercel.app/dashboard'), 2500);
       }
     } catch (error: any) {
       console.error("Registration error:", error);

@@ -59,7 +59,7 @@ const Login = () => {
 
         login(user, token);
         toast.success('Login successful!', { autoClose: 2000 });
-        setTimeout(() => navigate('/dashboard'), 2500);
+        setTimeout(() => navigate('https://sitecrafter.vercel.app/dashboard'), 2500);
       }
     } catch (error: any) {
       console.error("Login error:", error.response?.data);
