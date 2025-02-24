@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 interface User {
   id: string;
@@ -10,7 +11,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (userData: User, token: string) => void;
+  login: (userData: User, token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -23,41 +24,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-    console.log("Stored token:", storedToken); // Add this for debugging
-    console.log("Stored user:", storedUser); // Add this for debugging
+      if (storedToken && storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setToken(storedToken);
+          setUser(userData);
+          // Set default authorization header
+          axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        } catch (error) {
+          console.error("Failed to restore auth state:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+      }
+      setLoading(false);
+    };
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-
-    setLoading(false);
+    initAuth();
   }, []);
 
   const login = async (userData: User, authToken: string) => {
-    return new Promise((resolve) => {
-      console.log("Login called with:", { userData, authToken });
-  
+    try {
       localStorage.setItem("token", authToken);
       localStorage.setItem("user", JSON.stringify(userData));
-  
+      
+      // Set default authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      
       setUser(userData);
       setToken(authToken);
-  
-      setTimeout(() => {
-        navigate("/dashboard", { replace: true });
-        resolve(true);
-      }, 100);
-    });
+      
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   };
-  
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    // Remove authorization header
+    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     setToken(null);
     navigate("/login", { replace: true });

@@ -1,5 +1,5 @@
 import { WebContainer } from '@webcontainer/api';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Loader } from './Loader';
 
 interface PreviewFrameProps {
@@ -11,49 +11,47 @@ export function PreviewFrame({ files, webContainer }: PreviewFrameProps) {
   const [url, setUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const serverRef = useRef<any>(null);
+  const [serverStarted, setServerStarted] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    let serverProcess: any = null;
 
     async function startDevServer() {
-      if (!webContainer) return;
+      if (!webContainer || serverStarted) return;
       
       try {
         setIsLoading(true);
         setError("");
 
-        // Kill any existing process
-        if (serverProcess) {
-          try {
-            await serverProcess.kill();
-          } catch (e) {
-            console.log("No previous process to kill");
-          }
+        // Install dependencies only if needed
+        if (!serverRef.current) {
+          const installProcess = await webContainer.spawn('npm', ['install']);
+          await installProcess.exit;
         }
 
-        // Install dependencies
-        const installProcess = await webContainer.spawn('npm', ['install']);
-        await installProcess.exit;
-
-        // Start dev server
-        serverProcess = await webContainer.spawn('npm', ['run', 'dev']);
-        
-        // Handle server output
-        serverProcess.output.pipeTo(
-          new WritableStream({
-            write(data) {
-              console.log(data);
-            }
-          })
-        );
+        // Start dev server if not already running
+        if (!serverRef.current) {
+          serverRef.current = await webContainer.spawn('npm', ['run', 'dev']);
+          
+          // Handle server output
+          serverRef.current.output.pipeTo(
+            new WritableStream({
+              write(data) {
+                if (data.includes('Local:')) {
+                  console.log('Dev server started:', data);
+                }
+              }
+            })
+          );
+        }
 
         // Listen for server ready event
         webContainer.on('server-ready', (port, serverUrl) => {
           if (isMounted) {
-            console.log('Server is ready on port:', port);
             setUrl(serverUrl);
             setIsLoading(false);
+            setServerStarted(true);
           }
         });
 
@@ -68,14 +66,10 @@ export function PreviewFrame({ files, webContainer }: PreviewFrameProps) {
 
     startDevServer();
 
-    // Cleanup function
     return () => {
       isMounted = false;
-      if (serverProcess) {
-        serverProcess.kill().catch(console.error);
-      }
     };
-  }, [webContainer]); // Only re-run when webContainer changes
+  }, [webContainer, serverStarted]);
 
   if (!webContainer) {
     return (
@@ -94,10 +88,14 @@ export function PreviewFrame({ files, webContainer }: PreviewFrameProps) {
         <div className="text-center">
           <p className="mb-2">{error}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              serverRef.current = null;
+              setServerStarted(false);
+              setError("");
+            }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
           >
-            Reload Page
+            Retry
           </button>
         </div>
       </div>
@@ -119,6 +117,7 @@ export function PreviewFrame({ files, webContainer }: PreviewFrameProps) {
           src={url}
           className="w-full h-full border-0 rounded-lg"
           title="Preview"
+          key={url}
         />
       )}
     </div>
