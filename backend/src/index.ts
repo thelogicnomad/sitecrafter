@@ -112,7 +112,7 @@ app.post("/chat", async (req, res) => {
     });
 
     const responseContent = response.choices[0].message.content;
-    console.log(responseContent);
+   // console.log(responseContent);
 
     res.json({ response: responseContent });
   } catch (error) {
