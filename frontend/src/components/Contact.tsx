@@ -54,13 +54,13 @@ const Contact = () => {
             <InputField 
               label="NAME"
               icon={User}
-              placeholder="John Doe"
+              placeholder="Name"
             />
             <InputField 
               label="EMAIL"
               icon={Mail}
               type="email"
-              placeholder="john@example.com"
+              placeholder="youremail@gmail.com"
             />
             <InputField 
               label="MESSAGE"
