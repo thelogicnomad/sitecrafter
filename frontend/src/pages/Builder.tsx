@@ -1,6 +1,5 @@
-
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { StepsList } from '../components/StepsList';
 import { FileExplorer } from '../components/FileExplorer';
 import { TabView } from '../components/TabView';
@@ -13,10 +12,11 @@ import { parseXml } from '../steps';
 import { useWebContainer } from '../hooks/useWebContainer';
 import { Loader } from '../components/Loader';
 import { Sparkles, Code2, Eye } from 'lucide-react';
-
+import { DownloadButton } from '../components/download';
 
 export function Builder() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { prompt } = location.state as { prompt: string };
   const [userPrompt, setPrompt] = useState("");
   const [llmMessages, setLlmMessages] = useState<{role: "user" | "assistant", content: string;}[]>([]);
@@ -30,8 +30,30 @@ export function Builder() {
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   
   const [steps, setSteps] = useState<Step[]>([]);
-
   const [files, setFiles] = useState<FileItem[]>([]);
+
+  const handleCodeChange = useCallback((newContent: string) => {
+    if (!selectedFile) return;
+
+    setFiles(prevFiles => {
+      const updateFileContent = (items: FileItem[]): FileItem[] => {
+        return items.map(item => {
+          if (item.path === selectedFile.path) {
+            return { ...item, content: newContent };
+          }
+          if (item.type === 'folder' && item.children) {
+            return {
+              ...item,
+              children: updateFileContent(item.children)
+            };
+          }
+          return item;
+        });
+      };
+
+      return updateFileContent(prevFiles);
+    });
+  }, [selectedFile]);
 
   useEffect(() => {
     let originalFiles = [...files];
@@ -39,8 +61,8 @@ export function Builder() {
     steps.filter(({status}) => status === "pending").map(step => {
       updateHappened = true;
       if (step?.type === StepType.CreateFile) {
-        let parsedPath = step.path?.split("/") ?? []; // ["src", "components", "App.tsx"]
-        let currentFileStructure = [...originalFiles]; // {}
+        let parsedPath = step.path?.split("/") ?? [];
+        let currentFileStructure = [...originalFiles];
         let finalAnswerRef = currentFileStructure;
   
         let currentFolder = ""
@@ -50,7 +72,6 @@ export function Builder() {
           parsedPath = parsedPath.slice(1);
   
           if (!parsedPath.length) {
-            // final file
             let file = currentFileStructure.find(x => x.path === currentFolder)
             if (!file) {
               currentFileStructure.push({
@@ -63,10 +84,8 @@ export function Builder() {
               file.content = step.code;
             }
           } else {
-            /// in a folder
             let folder = currentFileStructure.find(x => x.path === currentFolder)
             if (!folder) {
-              // create the folder
               currentFileStructure.push({
                 name: currentFolderName,
                 type: 'folder',
@@ -80,21 +99,15 @@ export function Builder() {
         }
         originalFiles = finalAnswerRef;
       }
-
     })
 
     if (updateHappened) {
-
       setFiles(originalFiles)
-      setSteps(steps => steps.map((s: Step) => {
-        return {
-          ...s,
-          status: "completed"
-        }
-        
-      }))
+      setSteps(steps => steps.map((s: Step) => ({
+        ...s,
+        status: "completed"
+      })))
     }
-    //console.log(files);
   }, [steps, files]);
 
   useEffect(() => {
@@ -103,7 +116,6 @@ export function Builder() {
   
       const processFile = (file: FileItem, isRootFolder: boolean) => {  
         if (file.type === 'folder') {
-          // For folders, create a directory entry
           mountStructure[file.name] = {
             directory: file.children ? 
               Object.fromEntries(
@@ -119,7 +131,6 @@ export function Builder() {
               }
             };
           } else {
-            // For files, create a file entry with contents
             return {
               file: {
                 contents: file.content || ''
@@ -131,16 +142,12 @@ export function Builder() {
         return mountStructure[file.name];
       };
   
-      // Process each top-level file/folder
       files.forEach(file => processFile(file, true));
   
       return mountStructure;
     };
   
     const mountStructure = createMountStructure(files);
-  
-    // Mount the structure if WebContainer is available
-    console.log(mountStructure);
     webcontainer?.mount(mountStructure);
   }, [files, webcontainer]);
 
@@ -190,6 +197,7 @@ export function Builder() {
   useEffect(() => {
     init();
   }, []);
+
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
@@ -210,12 +218,20 @@ export function Builder() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex flex-col transition-colors duration-500">
       <header className="bg-gradient-to-r from-gray-800 to-gray-700 border-b border-gray-600/50 px-6 py-3 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
-          <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
-            Site Crafter
-          </h1>
-          <span className="text-sm text-gray-400 ml-4">Prompt: {prompt}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            >
+              <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
+              <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
+                Site Crafter
+              </h1>
+            </button>
+            <DownloadButton files={files} />
+            <span className="text-sm text-gray-400">Prompt: {prompt}</span>
+          </div>
         </div>
       </header>
       
@@ -325,7 +341,10 @@ export function Builder() {
             </div>
             <div className="h-[calc(100%-4rem)]">
               {activeTab === 'code' ? (
-                <CodeEditor file={selectedFile} />
+                <CodeEditor 
+                  file={selectedFile} 
+                  onCodeChange={handleCodeChange}
+                />
               ) : (
                 <PreviewFrame webContainer={webcontainer} files={files} />
               )}
