@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Laptop, LogOut, Sparkles } from 'lucide-react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
 
   const handleLogout = () => {
-    navigate('/');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  
+    
+    toast.success('Logged out successfully!', { autoClose: 2000 });
+    
+    setTimeout(() => {
+      navigate('/', { replace: true });
+    }, 500);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

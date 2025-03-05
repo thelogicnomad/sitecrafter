@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -13,11 +13,26 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showColdStartMessage, setShowColdStartMessage] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  // Check if Google auth was in progress when page loads
+  useEffect(() => {
+    const googleAuthInProgress = localStorage.getItem('googleAuthInProgress');
+    if (googleAuthInProgress === 'true') {
+      // Clear the flag
+      localStorage.removeItem('googleAuthInProgress');
+      
+      // Show a toast message
+      toast.info('Google authentication was interrupted. Please try again.', {
+        autoClose: 5000
+      });
+    }
+  }, []);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +73,13 @@ const Login = () => {
 
 
   const handleGoogleLogin = () => {
+    setGoogleLoading(true);
+    setShowColdStartMessage(true);
+    
+    // Store a flag in localStorage to indicate Google auth is in progress
+    localStorage.setItem('googleAuthInProgress', 'true');
+    
+    // Redirect to Google auth endpoint
     window.location.href = `${BACKEND_URL}/auth/google`;
   };
   
@@ -65,7 +87,7 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex justify-center items-center p-4 sm:p-6">
       <ToastContainer position="top-right" />
       {showColdStartMessage && (
-        <LoadingOverlay message="Logging you in..." />
+        <LoadingOverlay message={googleLoading ? "Connecting to Google..." : "Logging you in..."} />
       )}
       <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="w-full md:w-1/2 p-6 sm:p-8">
@@ -79,10 +101,17 @@ const Login = () => {
               <div className="flex justify-center">
                 <button 
                   onClick={handleGoogleLogin} 
-                  className="flex items-center justify-center w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  disabled={googleLoading}
+                  className="flex items-center justify-center w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <GoogleLogo />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Sign in with Google</span>
+                  {googleLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  ) : (
+                    <GoogleLogo />
+                  )}
+                  <span className="ml-2 text-sm font-medium text-gray-700">
+                    {googleLoading ? 'Connecting...' : 'Sign in with Google'}
+                  </span>
                 </button>
               </div>
 
