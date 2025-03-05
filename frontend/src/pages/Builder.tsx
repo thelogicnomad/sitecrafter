@@ -12,7 +12,7 @@ import { parseXml } from '../steps';
 import { useWebContainer } from '../hooks/useWebContainer';
 import { Loader } from '../components/Loader';
 import { Sparkles, Code2, Eye } from 'lucide-react';
-import { DownloadButton } from '../components/download';
+import { DownloadButton } from '../components/DownloadButton';
 
 export function Builder() {
   const location = useLocation();
