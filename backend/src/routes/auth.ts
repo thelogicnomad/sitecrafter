@@ -1,3 +1,4 @@
+// auth.ts
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -20,7 +21,6 @@ router.post('/signup', async (req: Request, res: Response<AuthResponse>): Promis
   try {
     const { email, username, password } = req.body;
 
-    // Check if the user already exists
     const existingUser = await User.findOne({ 
       $or: [{ email }, { username }] 
     });
@@ -30,14 +30,10 @@ router.post('/signup', async (req: Request, res: Response<AuthResponse>): Promis
       return;
     }
 
-    // Hash password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create and save user
     const user = await User.create({
       email,
       username,
-      password: hashedPassword
+      password // Hashing will be handled in the User model
     });
 
     if (!process.env.JWT_SECRET) {
@@ -46,10 +42,8 @@ router.post('/signup', async (req: Request, res: Response<AuthResponse>): Promis
       return;
     }
 
-    // Fix: Ensure `_id` is a string
     const userId = (user._id as string);
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId, username: user.username },
       process.env.JWT_SECRET,
@@ -65,7 +59,6 @@ router.post('/signup', async (req: Request, res: Response<AuthResponse>): Promis
         username: user.username,
       },
     });
-
   } catch (error) {
     console.error("❌ Error in signup:", error);
     res.status(500).json({ message: 'Server error' });
@@ -76,8 +69,6 @@ router.post('/signup', async (req: Request, res: Response<AuthResponse>): Promis
 router.post('/login', async (req: Request, res: Response<AuthResponse>): Promise<void> => {
   try {
     const { email, password } = req.body;
-
-    // Find user by email
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -85,14 +76,12 @@ router.post('/login', async (req: Request, res: Response<AuthResponse>): Promise
       return;
     }
 
-    // Check if user has a password (OAuth users do not)
     if (!user.password) {
       res.status(401).json({ message: 'This account is registered via OAuth. Please sign in with Google or Microsoft.' });
       return;
     }
 
-    // Compare hashed password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       res.status(401).json({ message: 'Invalid credentials' });
       return;
@@ -104,10 +93,8 @@ router.post('/login', async (req: Request, res: Response<AuthResponse>): Promise
       return;
     }
 
-    // Fix: Ensure `_id` is a string
     const userId = (user._id as string);
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId, username: user.username },
       process.env.JWT_SECRET,
@@ -122,7 +109,6 @@ router.post('/login', async (req: Request, res: Response<AuthResponse>): Promise
         username: user.username,
       },
     });
-
   } catch (error) {
     console.error("❌ Error in login:", error);
     res.status(500).json({ message: 'Server error' });
@@ -130,3 +116,4 @@ router.post('/login', async (req: Request, res: Response<AuthResponse>): Promise
 });
 
 export default router;
+
