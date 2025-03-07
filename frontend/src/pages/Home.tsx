@@ -68,7 +68,7 @@ const Home = () => {
             </p>
             <div className="animate-slide-up animation-delay-900">
               <button 
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/dashboard')}
                 className="inline-flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 <span>Get Started</span>

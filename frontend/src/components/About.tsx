@@ -40,9 +40,7 @@ const About = () => {
           <p className="text-xl md:text-2xl text-gray-600 mb-6">
             Transforming Ideas into Websites, Seamlessly
           </p>
-          <button className="bg-gray-900 text-white px-8 py-3 rounded-full hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl">
-            Explore Crafting
-          </button>
+
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
