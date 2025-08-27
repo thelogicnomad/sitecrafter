@@ -55,6 +55,11 @@ app.use(passport.session());
 app.use('/auth', authRoutes);
 app.use('/auth', googleAuthRoutes);
 
+// Health check route
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Gemini AI setup
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const systemPrompt = getSystemPrompt();
