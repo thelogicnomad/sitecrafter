@@ -1,6 +1,9 @@
 {
-  "redirects": [
-    { "source": "/template", "destination": "/src/index.ts", "permanent": true },
-    {"source": "/chat", "destination": "/src/index.ts", "permanent": true }
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.ts", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "api/index.ts" }
   ]
 }
