@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Register";
 import Home from "./pages/Home";
 import { Builder } from "./pages/Builder";
+import { Planning } from "./pages/Planning";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
           </Route>
           
           <Route element={<ProtectedRoute />}>
+            <Route path="/planning" element={<Planning />} />
             <Route path="/builder" element={<Builder />} />
           </Route>
 

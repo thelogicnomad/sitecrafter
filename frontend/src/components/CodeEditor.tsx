@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import Editor from '@monaco-editor/react';
+import React, { useCallback, useEffect } from 'react';
+import Editor, { loader } from '@monaco-editor/react';
 import { FileItem } from '../hooks/types';
 
 interface CodeEditorProps {
@@ -8,6 +8,23 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ file, onCodeChange }: CodeEditorProps) {
+  useEffect(() => {
+    // Configure Monaco to disable TypeScript errors
+    loader.init().then(monaco => {
+      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+        noSuggestionDiagnostics: true
+      });
+
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+        noSuggestionDiagnostics: true
+      });
+    });
+  }, []);
+
   const handleEditorChange = useCallback((value: string | undefined) => {
     if (onCodeChange && value !== undefined) {
       onCodeChange(value);

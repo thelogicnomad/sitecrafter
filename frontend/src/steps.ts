@@ -28,7 +28,13 @@ import { Step, StepType } from './hooks/types';
  * 
  * The input can have strings in the middle they need to be ignored
  */
-export function parseXml(response: string): Step[] {
+export function parseXml(response: string | undefined | null): Step[] {
+    // Safety check for undefined, null, or non-string response
+    if (!response || typeof response !== 'string') {
+      console.error('⚠️ parseXml received invalid response:', response);
+      return [];
+    }
+    
     // Extract the XML content between <chirArtifact> tags
     const xmlMatch = response.match(/<chirArtifact[^>]*>([\s\S]*?)<\/chirArtifact>/);
     

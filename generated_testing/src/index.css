@@ -1,0 +1,10 @@
+@tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    @layer base {
+      body {
+        @apply bg-nebula-white text-deep-space-navy dark:bg-deep-space-navy dark:text-nebula-white;
+        @apply transition-colors duration-300;
+      }
+    }

@@ -23,7 +23,7 @@ const Dashboard = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
-      navigate('/builder', { state: { prompt } });
+      navigate('/planning', { state: { prompt } });
     }
   };
 

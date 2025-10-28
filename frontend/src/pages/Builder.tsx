@@ -176,10 +176,27 @@ export function Builder() {
 
       setLoading(false);
 
-      setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
-        ...x,
-        status: "pending" as "pending"
-      }))]);
+      // Validate backend response
+      if (!stepsResponse.data || !stepsResponse.data.response) {
+        console.error('❌ Backend returned invalid response:', stepsResponse.data);
+        throw new Error('Backend did not return a valid response. Please check backend logs.');
+      }
+
+      setSteps(s => {
+        const newSteps = parseXml(stepsResponse.data.response);
+        
+        // Check if parseXml returned any steps
+        if (newSteps.length === 0) {
+          console.warn('⚠️ No steps were parsed from the response');
+        }
+        
+        const maxId = s.length > 0 ? Math.max(...s.map(step => step.id)) : 0;
+        return [...s, ...newSteps.map((x, idx) => ({
+          ...x,
+          id: maxId + idx + 1,
+          status: "pending" as "pending"
+        }))];
+      });
 
       setLlmMessages([...prompts, prompt].map(content => ({
         role: "user",
@@ -187,8 +204,9 @@ export function Builder() {
       })));
 
       setLlmMessages(x => [...x, {role: "assistant", content: stepsResponse.data.response}]);
-    } catch(error) {
-      console.log("sorry we cannot generate the required website");
+    } catch(error: any) {
+      console.error('❌ Error generating website:', error);
+      alert(`Failed to generate website: ${error.message || 'Unknown error'}. Check console for details.`);
     } finally {
       setInitialLoading(false);
     }
@@ -283,10 +301,15 @@ export function Builder() {
                               content: stepsResponse.data.response
                             }]);
                             
-                            setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
-                              ...x,
-                              status: "pending" as "pending"
-                            }))]);
+                            setSteps(s => {
+                              const newSteps = parseXml(stepsResponse.data.response);
+                              const maxId = s.length > 0 ? Math.max(...s.map(step => step.id)) : 0;
+                              return [...s, ...newSteps.map((x, idx) => ({
+                                ...x,
+                                id: maxId + idx + 1,
+                                status: "pending" as "pending"
+                              }))];
+                            });
                           } catch (error) {
                             console.error("Failed to generate response:", error);
                           } finally {

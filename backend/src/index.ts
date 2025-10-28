@@ -11,6 +11,7 @@ import OpenAI from "openai";
 import authRoutes from './routes/auth';
 import googleAuthRoutes from './routes/googleAuth';
 import './config/passport';
+import { PlanningService } from './services/planning.service';
 
 dotenv.config();
 
@@ -18,8 +19,8 @@ const app: Application = express();
 const token = process.env.openai_api;
 
 const client = new OpenAI({
-  baseURL: "https://models.inference.ai.azure.com",
-  apiKey: token
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+  apiKey: process.env.gemini2
 });
 
 // Enhanced CORS configuration
@@ -58,17 +59,28 @@ app.use('/auth', googleAuthRoutes);
 // Gemini AI setup
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const systemPrompt = getSystemPrompt();
-const genAI = new GoogleGenerativeAI(process.env.gemini);
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
-  systemInstruction: getSystemPrompt(),
+
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
 });
+
+// const genAI = new GoogleGenerativeAI(process.env.gemini);
+// const model = genAI.getGenerativeModel({
+//   model: "gemini-2.5-flash",
+//   systemInstruction: getSystemPrompt(),
+// });
 
 // Template endpoint
 app.post("/template", async (req, res) => {
   const prompt = req.body.prompt + "    Return either node or react based on what do you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra";
-  const result = await model.generateContent(prompt);
-  const response = (await result.response.text()).toLowerCase().trim();
+  const result = await openai.chat.completions.create({
+    model: "z-ai/glm-4.5-air:free",
+    messages: [{ role: "user", content: prompt }],
+    
+  });
+  const content=await result.choices[0].message.content;
+  const response = content?.toLowerCase().trim();
 
   if (response === 'node') {
     res.json({
@@ -89,6 +101,31 @@ app.post("/template", async (req, res) => {
   return;
 });
 
+// Planning endpoint
+app.post("/planning", async (req, res) => {
+  try {
+    const { requirements } = req.body;
+
+    if (!requirements) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Requirements are required' 
+      });
+      return;
+    }
+
+    const result = await PlanningService.generateBlueprint(requirements);
+    res.json(result);
+
+  } catch (error: any) {
+    console.error('Planning route error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
 // Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
@@ -107,12 +144,12 @@ app.post("/chat", async (req, res) => {
     ];
     
     const response = await client.chat.completions.create({
-      model: "gpt-4.1",
+      model: "gemini-2.5-pro",
       messages: chatMessages,
     });
 
     const responseContent = response.choices[0].message.content;
-   // console.log(responseContent);
+    console.log(responseContent);
 
     res.json({ response: responseContent });
   } catch (error) {
